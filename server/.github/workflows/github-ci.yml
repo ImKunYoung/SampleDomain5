@@ -1,0 +1,46 @@
+# NHipster ci-cd
+name: Application CI
+on: [push, pull_request]
+jobs:
+    pipeline:
+        name:  pipeline
+        runs-on: ubuntu-latest
+        if: "!contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.pull_request.title, '[skip ci]') && !contains(github.event.pull_request.title, '[ci skip]')"
+        timeout-minutes: 40
+        env:
+            NODE_VERSION: 14.16.0
+            JHI_DISABLE_WEBPACK_LOGS: true
+            NG_CLI_ANALYTICS: false
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions/setup-node@v2
+              with:
+                  node-version: 14.16.0
+            - name: Install node.js packages
+              run: npm install
+            - name: Run backend test
+              run: |
+                  npm install
+                  npm run test
+              working-directory: server
+               }
+              if (!skipClient) {             - name: Run frontend test
+              run: npm run test
+            - name: Analyze code with SonarQube
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+              run: |
+                  if [ -n $SONAR_TOKEN ]; then
+                      cd server && npm run sonar:scanner
+                  else
+                      echo No SONAR_TOKEN, skipping...
+                  fi
+            - name: Package application
+              run:  cd server && npm run build
+          #  - name: Build and publish docker image
+          #    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
+          #    run: |
+          #        GIT_TAG=:${GITHUB_REF#refs/tags/}
+          #        DOCKER_TAG=${GIT_TAG#:refs/heads/master}
+          #        ./mvnw -ntp jib:build -Djib.to.image=jhipster/${DOCKER_TAG} -Djib.to.auth.username="${{ secrets.DOCKER_USERNAME }}" -Djib.to.auth.password="${{ secrets.DOCKER_PASSWORD }}"

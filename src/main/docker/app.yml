@@ -1,0 +1,8 @@
+version: '3.8'
+services:
+  sampledomain5-app:
+    build: ../../..
+    container_name: sampledomain5-app
+    environment:
+    ports:
+      - 8081:8081
